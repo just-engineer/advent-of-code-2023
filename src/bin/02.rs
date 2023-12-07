@@ -1,6 +1,5 @@
-use std::cmp::{max, min, min_by};
+use std::cmp::max;
 use std::str::FromStr;
-use advent_of_code::utils::{byte_to_digit, bytes_to_digit};
 advent_of_code::solution!(2);
 
 
