@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use advent_of_code::utils::to_digit;
+use advent_of_code::utils::to_digit_i32;
 advent_of_code::solution!(3);
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -100,7 +100,7 @@ impl Parser {
             '0'..='9' => {
                 match self.prev_state {
                     State::Num(value, row, col) => {
-                        let new_value = value * 10 + to_digit(current);
+                        let new_value = value * 10 + to_digit_i32(current);
                         let state = State::Num(new_value, row, col);
                         self.prev_state = state
                     }
@@ -110,10 +110,10 @@ impl Parser {
                             position: (row, col),
                         };
                         self.symbols.push(symbol);
-                        self.prev_state = State::Num(to_digit(current), row, column);
+                        self.prev_state = State::Num(to_digit_i32(current), row, column);
                     }
                     State::Dot => {
-                        self.prev_state = State::Num(to_digit(current), row, column);
+                        self.prev_state = State::Num(to_digit_i32(current), row, column);
                     }
                 }
             }

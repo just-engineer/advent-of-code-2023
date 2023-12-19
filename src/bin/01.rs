@@ -60,10 +60,8 @@ fn multi_scan_line(line: &str) -> u32 {
         }
         i += 1;
     }
-    eprintln!("line = {:?}", line);
-    let i1 = result.0.expect("number is found") * 10 + result.1.expect("number is found");
-    eprintln!("i1 = {:?}", i1);
-    i1
+    
+    result.0.expect("number is found") * 10 + result.1.expect("number is found")
 }
 
 fn find_num_str_start(slice: &str, num: &str, value: u32) -> Option<u32> {
