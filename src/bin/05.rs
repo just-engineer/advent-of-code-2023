@@ -109,7 +109,7 @@ impl Range {
         let negative = item < self.source;
         if !negative {
             let target = item - self.source;
-            if target <= self.length {
+            if target < self.length {
                 Some(self.dest + target)
             } else {
                 None

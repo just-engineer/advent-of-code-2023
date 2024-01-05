@@ -11,10 +11,7 @@ pub fn part_one(input: &str) -> Option<u32> {
         .filter(|g| g.sets
             .iter()
             .all(is_valid))
-        .map(|g| {
-            eprintln!("g = {:?}", g);
-            g.id
-        })
+        .map(|g| g.id)
         .sum();
     Some(sum)
 }

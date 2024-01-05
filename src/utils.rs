@@ -18,10 +18,15 @@ pub fn split_digits(line: &str, pattern: &str) -> Vec<u32> {
     line.split(pattern)
         .filter(|l| !l.is_empty())
         .filter_map(to_digits)
-        .map(|a| a as u32)
         .collect()
 }
 
-fn to_digits(l: &str) -> Option<u32> {
+pub fn to_digits(l: &str) -> Option<u32> {
     l.chars().map(to_digit).reduce(|a, b| a * 10 + b)
+}
+
+pub fn to_digits_u64(l: &str) -> Option<u64> {
+    l.chars().map(to_digit)
+        .map(|a| a as u64)
+        .reduce(| a, b| a * 10 + b)
 }
