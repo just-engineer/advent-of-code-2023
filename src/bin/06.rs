@@ -17,14 +17,14 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 fn calc_wins(time: u64, distance: u64) -> u32 {
-    eprintln!("=== time: {:?} distance: {:?}", time, distance);
+    // eprintln!("=== time: {:?} distance: {:?}", time, distance);
     let t = time as i64;
     let d = distance as i64;
     let disc = (t.pow(2) - 4 * d) as f64;
-    eprintln!("disc = {:?}", disc);
+    // eprintln!("disc = {:?}", disc);
     let x1 = (-t as f64 - disc.powf(0.5)) / -2f64;
     let x2 = (-t as f64 + disc.powf(0.5)) / -2f64;
-    eprintln!("x1 = {:?}, x2 = {:?}", x1, x2);
+    // eprintln!("x1 = {:?}, x2 = {:?}", x1, x2);
 
     let x1i = x1.floor() as i64;
     let x2i = if x2.ceil() == x2.floor() {
@@ -32,14 +32,14 @@ fn calc_wins(time: u64, distance: u64) -> u32 {
     } else {
         x2.floor() as i64
     };
-    eprintln!("x1i = {:?}, x2i = {:?}", x1i, x2i);
+    // eprintln!("x1i = {:?}, x2i = {:?}", x1i, x2i);
 
     let end = min_under(t, x1i) as u32;
     let start = min_under(t, x2i) as u32;
-    eprintln!("start = {:?}, end = {:?}", start, end);
+    // eprintln!("start = {:?}, end = {:?}", start, end);
 
     let result = end - start;
-    eprintln!("result = {:?}", result);
+    // eprintln!("result = {:?}", result);
     result
 }
 
@@ -67,8 +67,8 @@ pub fn part_two(input: &str) -> Option<u32> {
     let distance = distance.replace(" ", "");
     let time = to_digits_u64(&time).expect("time is present");
     let distance = to_digits_u64(&distance).expect("distance is present");
-    eprintln!("time = {:?}", time);
-    eprintln!("distance = {:?}", distance);
+    // eprintln!("time = {:?}", time);
+    // eprintln!("distance = {:?}", distance);
     let result = calc_wins(time, distance);
     Some(result)
 }
