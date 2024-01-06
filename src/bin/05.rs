@@ -1,4 +1,5 @@
 advent_of_code::solution!(5);
+use std::collections::HashMap;
 use itertools::Itertools;
 
 use advent_of_code::utils::{split_digits};
@@ -51,16 +52,13 @@ pub fn part_two(input: &str) -> Option<u32> {
     let seeds = parse_seeds_pair(lines[0]);
     let maps = parse_maps(lines);
     let mut results = Vec::new();
+    // let mut cache = HashMap::new();
     for range in seeds {
         for seed in range.0..range.0 + range.1 {
-            let mut seed = seed;
-            for map_range in &maps {
-                let ranges = map_range.ranges();
-                seed = ranges.iter()
-                    .find_map(|r| r.next(seed))
-                    .unwrap_or(seed);
-            }
-            results.push(seed);
+            // let result = *cache.entry(seed)
+            //     .or_insert_with(|| find_location(&maps, seed));
+            let result = find_location(&maps, seed);
+            results.push(result);
         }
     }
     results.into_iter()
@@ -72,8 +70,8 @@ fn find_location(maps: &[MapRange], seed: u32) -> u32 {
     for map_range in maps {
         let ranges = map_range.ranges();
         result = ranges.iter()
-            .find_map(|r| r.next(seed))
-            .unwrap_or(seed);
+            .find_map(|r| r.next(result))
+            .unwrap_or(result);
     }
     result
 }
