@@ -1,5 +1,5 @@
 advent_of_code::solution!(5);
-use std::collections::HashMap;
+
 use itertools::Itertools;
 
 use advent_of_code::utils::{split_digits};

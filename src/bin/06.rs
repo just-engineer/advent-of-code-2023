@@ -62,9 +62,9 @@ pub fn part_two(input: &str) -> Option<u32> {
     let lines = input.lines()
         .collect_vec();
     let time = digits_from_line(lines[0], "Time:");
-    let time = time.replace(" ", "");
+    let time = time.replace(' ', "");
     let distance = digits_from_line(lines[1], "Distance:");
-    let distance = distance.replace(" ", "");
+    let distance = distance.replace(' ', "");
     let time = to_digits_u64(&time).expect("time is present");
     let distance = to_digits_u64(&distance).expect("distance is present");
     // eprintln!("time = {:?}", time);

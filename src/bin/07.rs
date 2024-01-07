@@ -10,21 +10,11 @@ advent_of_code::solution!(7);
 pub fn part_one(input: &str) -> Option<u32> {
     let vec = input.lines()
         .filter_map(|l| l.split_once(' '))
-        .map(|(hand, bid)| (ParsedHand::new(hand), to_digits(bid).unwrap_or_else(|| panic!("bid: {} is digits", bid))))
+        .map(|(hand, bid)| (ParsedHand::new_v1(hand), to_digits(bid).unwrap_or_else(|| panic!("bid: {} is digits", bid))))
+        .sorted_by(|(h1, _), (h2, _)| cmp(h1, h2, ParsedHand::input_positions_v1))
         // .inspect(|it| eprintln!("it = {:?}", it))
-        .sorted_by_key(|(hand, _)| hand.clone())
-        .inspect(|it| eprintln!("it = {:?}", it))
         .collect_vec();
-    // eprintln!("vec = {:?}", vec);
-    let sum = vec.into_iter()
-        .map(|it| it.1)
-        .enumerate()
-        .map(|(pos, bid)| {
-            let pos = (pos + 1) as u32;
-            pos * bid
-        })
-        .sum();
-
+    let sum = calc_result(vec);
     Some(sum)
 }
 
@@ -34,164 +24,73 @@ struct ParsedHand {
     kind: Kind,
 }
 
-impl Eq for ParsedHand {}
-
-impl PartialEq<Self> for ParsedHand {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-
-impl PartialOrd<Self> for ParsedHand {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ParsedHand {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let positions = self.input_positions();
-        let other_input_positions = other.input_positions();
-        self.kind.cmp(&other.kind)
-            .then(positions.cmp(&other_input_positions))
-
-    }
+fn cmp(h1: &ParsedHand, h2: &ParsedHand, positions_func: fn(h: &ParsedHand) -> Vec<usize>) -> Ordering {
+    let positions = positions_func(h1);
+    let other_input_positions = positions_func(h2);
+    h1.kind.cmp(&h2.kind)
+        .then(positions.cmp(&other_input_positions).reverse())
 }
 
 impl ParsedHand {
-    pub fn new(hand: &str) -> Self {
-        let kind = Kind::new(hand);
+    pub fn new_v1(hand: &str) -> Self {
         Self {
             input: hand.to_owned(),
-            kind,
+            kind: Kind::new_v1(hand),
         }
     }
 
-    fn input_positions(&self) -> Vec<usize> {
+    pub fn new_v2(hand: &str) -> Self {
+        Self {
+            input: hand.to_owned(),
+            kind: Kind::new_v2(hand),
+        }
+    }
+
+
+    pub fn input_positions_v1(&self) -> Vec<usize> {
+        self.input_positions(find_char_pos_v1)
+    }
+
+    pub fn input_positions_v2(&self) -> Vec<usize> {
+        self.input_positions(find_char_pos_v2)
+    }
+
+    pub fn input_positions(&self, positions_fn: fn(char) -> usize) -> Vec<usize> {
         self.input.chars()
-            .map(|c| find_char_pos(c))
+            .map(positions_fn)
             .collect_vec()
     }
 }
 
 const LABELS: [char; 13] = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 
-#[derive(Debug, Eq, Copy, Clone)]
+#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Copy, Clone)]
 enum Kind {
-    High(Hand),
-    Pair(Hand),
-    TwoPair(Hand, Hand),
-    Tree(Hand),
-    FullHouse(Hand, Hand),
-    Four(Hand),
-    Five(Hand),
+    High,
+    Pair,
+    TwoPair,
+    Three,
+    FullHouse,
+    Four,
+    Five,
 }
 
-impl PartialEq<Self> for Kind {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
+fn find_char_pos_v1(symbol: char) -> usize {
+    find_char_pos(&LABELS, symbol)
 }
 
-impl PartialOrd<Self> for Kind {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
+fn find_char_pos_v2(symbol: char) -> usize {
+    find_char_pos(&NEW_LABELS, symbol)
 }
 
-impl Ord for Kind {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self {
-            Kind::High(c) => {
-                match other {
-                    Kind::High(o) => c.cmp(o),
-                    _ => Ordering::Less
-                }
-            }
-            Kind::Pair(c) => {
-                match other {
-                    Kind::High(_) => Ordering::Greater,
-                    Kind::Pair(o) => c.cmp(o),
-                    _ => Ordering::Less
-                }
-            }
-            Kind::TwoPair(c1, c2) => {
-                match other {
-                    Kind::High(_) | Kind::Pair(_) => Ordering::Greater,
-                    Kind::TwoPair(h1, h2) => Self::cmp_double((c1, c2), (h1, h2)),
-                    _ => Ordering::Less
-                }
-            }
-            Kind::Tree(c) => {
-                match other {
-                    Kind::High(_) | Kind::Pair(_) | Kind::TwoPair(_, _) => Ordering::Greater,
-                    Kind::Tree(h) => c.cmp(h),
-                    _ => Ordering::Less
-                }
-            }
-            Kind::FullHouse(c1, c2) => {
-                match other {
-                    Kind::FullHouse(h1, h2) => Self::cmp_double((c1, c2), (h1, h2)),
-                    Kind::Four(_) | Kind::Five(_) => Ordering::Less,
-                    _ => Ordering::Greater
-                }
-            }
-            Kind::Four(c) => {
-                match other {
-                    Kind::Four(h) => c.cmp(h),
-                    Kind::Five(_) => Ordering::Less,
-                    _ => Ordering::Greater
-                }
-            }
-            Kind::Five(c) => {
-                match other {
-                    Kind::Five(h) => c.cmp(h),
-                    _ => Ordering::Greater
-                }
-            }
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct Hand(char);
-
-impl PartialEq<Self> for Hand {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl PartialOrd for Hand {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Eq for Hand {}
-
-impl Ord for Hand {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.find_label_pos()
-            .cmp(&other.find_label_pos())
-            .reverse()
-    }
-}
-
-impl Hand {
-    fn find_label_pos(&self) -> usize {
-        find_char_pos(self.0)
-    }
-}
-
-fn find_char_pos(symbol: char) -> usize {
-    LABELS.iter().find_position(|c| **c == symbol)
+fn find_char_pos(labels: &[char], symbol: char) -> usize {
+    labels.iter().find_position(|c| **c == symbol)
         .map(|o| o.0)
         .expect("found label")
 }
 
 impl Kind {
-    pub fn new(hand: &str) -> Self {
+    pub fn new_v1(hand: &str) -> Self {
         let doubles = hand.chars()
             .fold(HashMap::new(), |mut acc, c| {
                 let x = acc.entry(c).or_insert(0);
@@ -199,54 +98,146 @@ impl Kind {
                 acc
             });
         let doubles = doubles.into_iter()
-            .map(|(value, count)| (Hand(value), count))
-            .sorted_by_key(|(card, count)| (*count, *card))
+            .map(|(value, count)| (value, count))
+            .sorted_by(|(card1, count1), (card2, count2)| {
+                count1.cmp(count2)
+                    .then(find_char_pos_v1(*card1)
+                        .cmp(&find_char_pos_v1(*card2))
+                        .reverse())
+            })
             .rev()
             .collect_vec();
-        eprintln!("doubles = {:?}", doubles);
+        Self::find_kind(hand, doubles).unwrap_or_else(|| panic!("expected kind for hand {}", hand))
+    }
+
+    fn find_kind(hand: &str, doubles: Vec<(char, i32)>) -> Option<Kind> {
         let mut iter = doubles.into_iter();
-        if let Some((card, count)) = iter.next() {
-            match count {
-                5 => Kind::Five(card),
-                4 => Kind::Four(card),
+        if let Some((_card, count)) = iter.next() {
+            let kind = match count {
+                5 => Kind::Five,
+                4 => Kind::Four,
                 3 => {
-                    if let Some((next_card, next_count)) = iter.next() {
+                    if let Some((_next_card, next_count)) = iter.next() {
                         if next_count == 2 {
-                            Kind::FullHouse(card, next_card)
+                            Kind::FullHouse
                         } else {
-                            Kind::Tree(card)
+                            Kind::Three
                         }
                     } else {
-                        Kind::Tree(card)
+                        Kind::Three
                     }
                 }
                 2 => {
-                    if let Some((next_card, next_count)) = iter.next() {
+                    if let Some((_next_card, next_count)) = iter.next() {
                         if next_count == 2 {
-                            Kind::TwoPair(card, next_card)
+                            Kind::TwoPair
                         } else {
-                            Kind::Pair(card)
+                            Kind::Pair
                         }
                     } else {
-                        Kind::Pair(card)
+                        Kind::Pair
                     }
                 }
-                1 => Kind::High(card),
+                1 => Kind::High,
                 _ => panic!("couldn't parse {}", hand)
-            }
+            };
+            Some(kind)
         } else {
-            panic!("couldn't parse {}", hand);
+            None
         }
     }
 
-    fn cmp_double(c: (&Hand, &Hand), h: (&Hand, &Hand)) -> Ordering {
-        (c.0.find_label_pos() + c.1.find_label_pos())
-            .cmp(&(h.0.find_label_pos() + h.1.find_label_pos()))
+    pub fn new_v2(hand: &str) -> Self {
+        let (doubles, j_count) = hand.chars()
+            .fold((HashMap::new(), 0), |mut acc, c| {
+                if c == 'J' {
+                    acc.1 += 1
+                } else {
+                    let x = acc.0.entry(c).or_insert(0);
+                    *x += 1;
+                }
+                acc
+            });
+        let doubles = doubles.into_iter()
+            .map(|(value, count)| (value, count))
+            .sorted_by(|(card1, count1), (card2, count2)| {
+                count1.cmp(count2)
+                    .then(find_char_pos_v2(*card1)
+                        .cmp(&find_char_pos_v2(*card2))
+                        .reverse())
+            })
+            .rev()
+            .collect_vec();
+        let kind = Self::find_kind(hand, doubles);
+        if kind.is_none() {
+            if j_count == 5 {
+                return Kind::Five
+            } else {
+                panic!("couldn't parse {}", hand)
+            }
+        }
+        let kind = kind.unwrap();
+        if j_count == 0 {
+            return kind;
+        }
+        match kind {
+            Kind::High => match j_count {
+                1 => Kind::Pair,
+                2 => Kind::Three,
+                3 => Kind::Four,
+                4 => Kind::Five,
+                _ => unreachable!()
+            }
+            Kind::Pair => match j_count {
+                1 => Kind::Three,
+                2 => Kind::Four,
+                3 => Kind::Five,
+                _ => unreachable!(),
+            },
+            Kind::TwoPair => match j_count {
+                1 => Kind::FullHouse,
+                _ => unreachable!(),
+            },
+            Kind::Three => match j_count {
+                1 => Kind::Four,
+                2 => Kind::Five,
+                _ => unreachable!(),
+            },
+            Kind::Four => match j_count {
+                1 => Kind::Five,
+                _ => unreachable!(),
+            },
+            _ => kind
+        }
     }
 }
 
-pub fn part_two(_input: &str) -> Option<u32> {
-    None
+const NEW_LABELS: [char; 13] = ['A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J'];
+
+pub fn part_two(input: &str) -> Option<u32> {
+    let vec = input.lines()
+        .filter_map(|l| l.split_once(' '))
+        .map(|(hand, bid)| (ParsedHand::new_v2(hand), to_digits(bid).unwrap_or_else(|| panic!("bid: {} is digits", bid))))
+        // .inspect(|it| eprintln!("it = {:?}", it))
+        .sorted_by(|(h1, _), (h2, _)| cmp(h1, h2, ParsedHand::input_positions_v2))
+        // .inspect(|it| eprintln!("it = {:?}", it))
+        .collect_vec();
+    // eprintln!("vec = {:?}", vec);
+    let sum = calc_result(vec);
+
+    Some(sum)
+}
+
+fn calc_result(vec: Vec<(ParsedHand, u32)>) -> u32 {
+    
+    vec.into_iter()
+        .map(|it| it.1)
+        .enumerate()
+        .map(|(pos, bid)| {
+            let pos = (pos + 1) as u32;
+            pos * bid
+        })
+        .sum()
 }
 
 #[cfg(test)]
@@ -262,6 +253,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(5905));
     }
 }
